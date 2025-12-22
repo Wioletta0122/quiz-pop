@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🦊 Quiz pop – Interaktywny Quiz Wiedzy
 
-## Getting Started
+## 🎓 Projekt na zaliczenie przedmiotu **Aplikacje Internetowe**
 
-First, run the development server:
+**Autor:** *Maciej Gilecki, Wioletta Grabias*  
+**Kierunek:** Inżynieria i analiza danych  
+**Przedmiot:** Aplikacje internetowe  
+**Prowadzący:** *dr inż. Mirosław Mazurek*  
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 📘 Opis projektu
+
+Aplikacja **Quiz pop** to interaktywny quiz wiedzy ogólnej, pozwalający użytkownikowi na wybór kategorii, odpowiadanie na pytania oraz przeglądanie wyników końcowych.  
+Została stworzona w technologii **Next.js + supabase**, co zapewnia **wysoką wydajność, nowoczesny interfejs oraz błyskawiczne działanie**.
+
+---
+
+## ✨ Główne cechy
+
+- 🔐 Logowanie z animowanym loaderem i komunikatem sukcesu  
+- 🧭 Wybór kategorii (historia, sport, muzyka, medycyna)  
+- 🧩 Dynamiczny quiz z licznikem pytań i punktacją  
+- 📊 Ekran wyników z wizualizacją procentową  
+- 📱 Responsywny design (mobile-first)  
+- 🎨 Nowoczesna, fioletowo-żółta paleta barw  
+- ⚡ Lekki i szybki frontend dzięki Vite + Bun  
+
+---
+
+## ⚙️ Funkcjonalności
+
+- ✅ Logowanie z walidacją oraz animacją sukcesu  
+- ✅ Wybór kategorii i zapis w `localStorage`  
+- ✅ System pytań z odliczaniem i podświetlaniem poprawnych odpowiedzi  
+- ✅ Podsumowanie wyników z procentowym wynikiem i informacją o poprawnych odpowiedziach  
+- ✅ Nawigacja SPA dzięki `react-router-dom`  
+- ✅ Pełna responsywność (mobile, tablet, desktop)  
+- ✅ Animowane tło (możliwość dodania efektu gwiazd lub gradientu)  
+
+---
+
+## 🧠 Technologie
+
+| Technologia | Zastosowanie |
+|-------------|--------------|
+| **React 18** | Budowa komponentów interfejsu użytkownika |
+| **Vite** | Błyskawiczny bundler i serwer deweloperski |
+| **Bun** | Szybki runtime i menedżer pakietów (alternatywa dla Node.js) |
+| **react-router-dom** | Nawigacja między widokami w aplikacji SPA |
+| **CSS (vanilla)** | Stylizacja, animacje i zmienne kolorystyczne |
+| **SQL** | ...WORK IN PROGRESS... |
+| **Express.js** | ...WORK IN PROGRESS... |
+
+---
+
+## 🖥️ Wymagania systemowe
+
+- **System operacyjny:** Windows 10/11, macOS lub Linux  
+- **Przeglądarka:** Chrome, Edge, Firefox (aktualna wersja)  
+- **Zainstalowany:** `Bun` lub `Node.js`  
+- **Dostęp do terminala:** PowerShell (Windows) / Terminal (macOS, Linux)
+
+---
+
+## 🚀 Instalacja i uruchomienie aplikacji
+
+### 1️⃣ Zainstaluj **Bun**
+> **Bun** to szybka alternatywa dla Node.js – musi być zainstalowany globalnie.
+
+#### 🔹 Windows (PowerShell – jako Administrator)
+```powershell
+iwr https://bun.sh/install.ps1 -useb | iex
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

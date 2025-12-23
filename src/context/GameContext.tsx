@@ -21,6 +21,7 @@ type GameContextType = {
   gamesPlayed: number;
   perfectGames: number;
   selectedBadges: number[];
+  hasClutchWin: boolean;
   
   dailyChallenge: DailyChallenge;
   
@@ -52,6 +53,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [perfectGames, setPerfectGames] = useState(0);
   const [selectedBadges, setSelectedBadges] = useState<number[]>([]);
+  const [hasClutchWin, setHasClutchWin] = useState(false); // NOWE
   
   const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge>(null);
 
@@ -118,6 +120,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setName(data.username); setAvatar(data.avatar); setRank(data.selected_rank || "Hello World");
         setGamesPlayed(data.games_played || 0); setPerfectGames(data.perfect_games || 0);
         setSelectedBadges(data.selected_badges || []);
+        setHasClutchWin(data.has_clutch_win || false); // NOWE
       }
     } catch (error) { console.error(error); } finally { setIsLoading(false); }
   };
@@ -126,8 +129,23 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
     const newGames = gamesPlayed + 1;
     const newPerfect = isPerfect ? perfectGames + 1 : perfectGames;
-    setGamesPlayed(newGames); setPerfectGames(newPerfect);
-    await supabase.from('profiles').update({ games_played: newGames, perfect_games: newPerfect }).eq('id', user.id);
+    
+    const isClutch = lives === 1;
+
+    setGamesPlayed(newGames); 
+    setPerfectGames(newPerfect);
+    
+    const updateData: any = { 
+        games_played: newGames, 
+        perfect_games: newPerfect 
+    };
+
+    if (isClutch) {
+        setHasClutchWin(true);
+        updateData.has_clutch_win = true;
+    }
+
+    await supabase.from('profiles').update(updateData).eq('id', user.id);
   };
 
   const updateSelectedBadges = async (badgeIds: number[]) => {
@@ -139,7 +157,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const addXp = async (amount: number) => {
     if (!user) return;
-    
     let newXp = xp + amount;
     let newLevel = level;
     let newLives = lives;
@@ -150,15 +167,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       newLives = 5;
     }
 
-    setXp(newXp); 
-    setLevel(newLevel); 
-    setLives(newLives);
-    
-    await supabase.from('profiles').update({ 
-      xp: newXp, 
-      level: newLevel, 
-      lives: newLives 
-    }).eq('id', user.id);
+    setXp(newXp); setLevel(newLevel); setLives(newLives);
+    await supabase.from('profiles').update({ xp: newXp, level: newLevel, lives: newLives }).eq('id', user.id);
   };
 
   const loseLife = async () => {
@@ -187,8 +197,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const resetProgress = async () => {
       if(!user) return;
-      await supabase.from('profiles').update({ xp: 0, level: 1, lives: 5, games_played: 0, perfect_games: 0, selected_badges: [], selected_rank: 'Hello World' }).eq('id', user.id);
-      setXp(0); setLevel(1); setLives(5); setGamesPlayed(0); setPerfectGames(0); setSelectedBadges([]); setRank('Hello World');
+      await supabase.from('profiles').update({ xp: 0, level: 1, lives: 5, games_played: 0, perfect_games: 0, selected_badges: [], selected_rank: 'Hello World', has_clutch_win: false }).eq('id', user.id);
+      setXp(0); setLevel(1); setLives(5); setGamesPlayed(0); setPerfectGames(0); setSelectedBadges([]); setRank('Hello World'); setHasClutchWin(false);
   };
 
   const loginWithEmail = async (email: string, pass: string) => {
@@ -203,8 +213,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase.auth.signUp({ email, password: pass });
     if (error) { setIsLoading(false); return { error: error.message }; }
     if (data.user) {
-      await supabase.from('profiles').insert([{ id: data.user.id, username: name, avatar: '🦊', xp: 0, level: 1, lives: 5, games_played: 0, perfect_games: 0, selected_rank: 'Hello World' }]);
-      setUser(data.user); setName(name); setXp(0); setLevel(1); setLives(5); setAvatar('🦊'); setRank('Hello World');
+      await supabase.from('profiles').insert([{ id: data.user.id, username: name, avatar: '🦊', xp: 0, level: 1, lives: 5, games_played: 0, perfect_games: 0, selected_rank: 'Hello World', has_clutch_win: false }]);
+      setUser(data.user); setName(name); setXp(0); setLevel(1); setLives(5); setAvatar('🦊'); setRank('Hello World'); setHasClutchWin(false);
       router.refresh(); router.push("/dashboard");
     } else { setIsLoading(false); }
     return { error: null };
@@ -217,7 +227,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <GameContext.Provider value={{ 
-        xp, level, lives, name, avatar, rank, gamesPlayed, perfectGames, selectedBadges, 
+        xp, level, lives, name, avatar, rank, gamesPlayed, perfectGames, selectedBadges, hasClutchWin,
         dailyChallenge,
         isLoading, user,
         addXp, loseLife, buyLives, resetProgress, updateProfile, finishGame, updateSelectedBadges,

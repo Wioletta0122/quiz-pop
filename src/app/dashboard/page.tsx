@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { 
   Code, Palette, Atom, Database, Lock, Target, BookOpen, Crown, 
-  Home, Trophy, ShoppingBag, Settings, Backpack, LogOut, Edit2, Star, Shield, Zap, LucideIcon, Check
+  Home, Trophy, ShoppingBag, Settings, Backpack, LogOut, Edit2, Star, Shield, Zap, LucideIcon, Check, Clover
 } from "lucide-react";
 import { useGame } from "@/context/GameContext";
 import { useState, useEffect } from "react";
@@ -11,7 +11,7 @@ import { supabase } from "@/utils/supabase";
 import Button3D from "@/components/Button3D";
 
 const iconMap: Record<string, LucideIcon> = {
-  Star: Star, BookOpen: BookOpen, Target: Target, Zap: Zap, Shield: Shield, Crown: Crown,
+  Star: Star, BookOpen: BookOpen, Target: Target, Zap: Zap, Shield: Shield, Crown: Crown, Clover: Clover,
 };
 
 const getBadgeStyle = (name: string) => {
@@ -23,6 +23,7 @@ const getBadgeStyle = (name: string) => {
     case 'Niezniszczalny': return 'text-green-600 bg-green-100 border-green-200 shadow-green-200';
     case 'Król Kodu': return 'text-amber-700 bg-amber-100 border-amber-400 shadow-amber-300';
     case 'Mistrz Next.js': return 'text-white bg-black border-gray-600 shadow-gray-400';
+    case 'Szczęściarz': return 'text-emerald-600 bg-emerald-100 border-emerald-200 shadow-emerald-200';
     default: return 'text-gray-500 bg-gray-100 border-gray-200';
   }
 };

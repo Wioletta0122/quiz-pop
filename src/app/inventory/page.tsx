@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import Button3D from "@/components/Button3D";
 import { useGame } from "@/context/GameContext";
-import { ArrowLeft, Lock, Award, Shield, Zap, BookOpen, Target, Crown, Star, LucideIcon } from "lucide-react";
+import { 
+  ArrowLeft, Lock, Award, Shield, Zap, BookOpen, 
+  Target, Crown, Star, Clover, LucideIcon 
+} from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/utils/supabase";
 
@@ -14,10 +17,13 @@ const iconMap: Record<string, LucideIcon> = {
   Zap: Zap,
   Shield: Shield,
   Crown: Crown,
+  Clover: Clover,
 };
 
 const getBadgeStyle = (name: string) => {
   switch (name) {
+    case 'Szczęściarz': 
+      return 'text-emerald-600 bg-emerald-100 border-emerald-200 shadow-emerald-200'; // Szmaragdowy styl
     case 'Początkujący': 
       return 'text-yellow-600 bg-yellow-100 border-yellow-200 shadow-yellow-200';
     case 'Pilny Uczeń': 
@@ -32,7 +38,6 @@ const getBadgeStyle = (name: string) => {
       return 'text-amber-700 bg-amber-100 border-amber-400 shadow-amber-300'; 
     case 'Mistrz Next.js': 
       return 'text-white bg-black border-gray-600 shadow-gray-400'; 
-      
     default: 
       return 'text-gray-500 bg-gray-100 border-gray-200';
   }
@@ -49,7 +54,7 @@ type Badge = {
 };
 
 export default function InventoryPage() {
-  const { level, lives, xp, gamesPlayed, perfectGames } = useGame();
+  const { level, lives, xp, gamesPlayed, perfectGames, hasClutchWin } = useGame();
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -63,9 +68,14 @@ export default function InventoryPage() {
   }, []);
 
   const isBadgeUnlocked = (badge: Badge) => {
+    if (badge.criteria_type === 'clutch') {
+        return hasClutchWin;
+    }
+    
     if (badge.criteria_type === 'games') return gamesPlayed >= badge.criteria_value;
     if (badge.criteria_type === 'perfect') return perfectGames >= badge.criteria_value;
-    return level >= badge.criteria_value;
+    
+    return level >= badge.required_level;
   };
 
   const unlockedCount = badges.filter(isBadgeUnlocked).length;
@@ -113,7 +123,6 @@ export default function InventoryPage() {
                 {badges.map((badge) => {
                     const unlocked = isBadgeUnlocked(badge);
                     const Icon = iconMap[badge.icon_name] || Star;
-                    
                     const style = getBadgeStyle(badge.name);
 
                     return (
@@ -137,7 +146,7 @@ export default function InventoryPage() {
                                 <p className="text-xs font-bold text-gray-400 leading-tight mb-1">{badge.description}</p>
                                 {!unlocked && (
                                     <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded font-bold uppercase">
-                                        Wymaga Lvl {badge.required_level}
+                                        Wymaga {badge.criteria_type === 'clutch' ? 'fuksa!' : `Lvl ${badge.required_level}`}
                                     </span>
                                 )}
                             </div>

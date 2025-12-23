@@ -1,45 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGame } from "@/context/GameContext";
 import Button3D from "@/components/Button3D";
-import { ArrowLeft, Save, User } from "lucide-react";
+import { ArrowLeft, Save, User, Award, Lock, Check } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/utils/supabase";
 
 const AVAILABLE_AVATARS = ["🦊", "🐼", "🦁", "🐯", "🐸", "🐙", "🦄", "🤖", "👽", "👩‍💻", "👨‍💻", "🥷"];
 
 export default function SettingsPage() {
-  const { name, avatar, updateProfile } = useGame();
+  const { name, avatar, rank, level, updateProfile } = useGame();
   const router = useRouter();
 
   const [inputName, setInputName] = useState(name);
   const [selectedAvatar, setSelectedAvatar] = useState(avatar);
+  const [selectedRank, setSelectedRank] = useState(rank);
+  const [availableRanks, setAvailableRanks] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchRanks = async () => {
+      const { data } = await supabase.from('ranks').select('*').order('min_level', { ascending: true });
+      if (data) setAvailableRanks(data);
+    };
+    fetchRanks();
+  }, []);
 
   const handleSave = async () => {
     if (inputName.trim() === "") return alert("Podaj jakieś imię!");
     if (inputName.length > 15) return alert("Za długa ksywka (max 15 znaków)!");
 
     setIsSaving(true);
-    await updateProfile(inputName, selectedAvatar); 
+    await updateProfile(inputName, selectedAvatar, selectedRank); 
     setIsSaving(false);
     
     router.push("/dashboard");
   };
 
   return (
-    <div className="max-w-xl mx-auto py-8 px-4 space-y-8">
+    <div className="max-w-2xl mx-auto py-8 px-4 space-y-8">
       
       <div className="text-center space-y-2">
         <div className="inline-block p-4 bg-gray-100 rounded-full text-gray-500 mb-2">
             <User size={40} />
         </div>
-        <h1 className="text-4xl font-black text-gray-800">Ustawienia Profilu</h1>
-        <p className="text-gray-500 font-bold">Dostosuj swoją postać!</p>
+        <h1 className="text-4xl font-black text-gray-800">Edytuj Profil</h1>
+        <p className="text-gray-500 font-bold">Dostosuj swoją postać i rangę!</p>
       </div>
 
-      <div className="bg-white p-6 rounded-3xl border-2 border-gray-200 shadow-sm space-y-6">
+      <div className="bg-white p-6 sm:p-8 rounded-3xl border-2 border-gray-200 shadow-sm space-y-8">
         
         <div className="space-y-2">
             <label className="font-black text-gray-700 ml-1">Twoja Ksywka</label>
@@ -70,6 +81,48 @@ export default function SettingsPage() {
                         {av}
                     </button>
                 ))}
+            </div>
+        </div>
+
+        <div className="space-y-3">
+            <label className="font-black text-gray-700 ml-1 flex items-center gap-2">
+                <Award size={18} /> Wybierz Rangę
+            </label>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {availableRanks.map((r) => {
+                    const isUnlocked = level >= r.min_level;
+                    const isSelected = selectedRank === r.name;
+
+                    return (
+                        <button
+                            key={r.id}
+                            disabled={!isUnlocked}
+                            onClick={() => setSelectedRank(r.name)}
+                            className={`
+                                relative flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left
+                                ${!isUnlocked 
+                                    ? "bg-gray-50 border-gray-100 opacity-60 cursor-not-allowed" 
+                                    : "bg-white hover:border-gray-300 cursor-pointer"}
+                                ${isSelected ? "border-primary ring-2 ring-primary ring-offset-2 bg-purple-50" : "border-gray-200"}
+                            `}
+                        >
+                            <div>
+                                <div className={`font-black text-sm ${r.color_class}`}>
+                                    {r.name}
+                                </div>
+                                {!isUnlocked && (
+                                    <div className="text-[10px] font-bold text-gray-400 uppercase mt-1">
+                                        Wymagany Lvl {r.min_level}
+                                    </div>
+                                )}
+                            </div>
+
+                            {isSelected && <div className="text-primary bg-white rounded-full p-1"><Check size={16} strokeWidth={3} /></div>}
+                            {!isUnlocked && <Lock size={16} className="text-gray-300" />}
+                        </button>
+                    );
+                })}
             </div>
         </div>
 

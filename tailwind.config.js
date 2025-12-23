@@ -1,8 +1,28 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+import type { Config } from "tailwindcss";
+
+const config: Config = {
   content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx}", // To mówi: szukaj we wszystkich podfolderach src
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  // 1. SAFELIST: Pozwala na kolory odznak z bazy (standardowe kolory Tailwinda)
+  safelist: [
+    { 
+      pattern: /shadow-(red|green|yellow|blue|purple|amber)-(200|300)/ 
+    },
+    { 
+      pattern: /bg-(red|green|yellow|blue|purple|amber)-100/ 
+    },
+    { 
+      pattern: /text-(red|green|yellow|blue|purple|amber)-(500|600|700)/ 
+    },
+    { 
+      pattern: /border-(red|green|yellow|blue|purple|amber)-(200|300|400)/ 
+    },
+    "shadow-md", "shadow-sm"
+  ],
+  // 2. THEME: Twoje unikalne kolory (Primary, Success, Error)
   theme: {
     extend: {
       colors: {
@@ -33,3 +53,5 @@ module.exports = {
   },
   plugins: [],
 };
+
+export default config;

@@ -9,7 +9,7 @@ import { useGame } from "@/context/GameContext";
 import { supabase } from "@/utils/supabase";
 
 function QuizGame() {
-  const { lives, loseLife, addXp } = useGame();
+  const { lives, loseLife, addXp, finishGame } = useGame();
   const searchParams = useSearchParams();
   const category = searchParams.get("category") || "js";
   
@@ -22,10 +22,11 @@ function QuizGame() {
   const [score, setScore] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [xpGained, setXpGained] = useState(0);
+  const [gameSaved, setGameSaved] = useState(false);
 
   useEffect(() => {
     const fetchQuestions = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('questions')
         .select('*')
         .eq('category', category);
@@ -40,12 +41,17 @@ function QuizGame() {
   }, [category]);
 
   useEffect(() => {
-    if (isFinished) {
+    if (isFinished && !gameSaved) {
       const earnedXp = score * 25;
       setXpGained(earnedXp);
       addXp(earnedXp);
+      
+      const isPerfect = score === questions.length && questions.length > 0;
+      finishGame(isPerfect);
+      
+      setGameSaved(true);
     }
-  }, [isFinished, score, addXp]);
+  }, [isFinished, gameSaved, score, questions.length, addXp, finishGame]);
 
   const handleAnswer = (index: number) => {
     if (selectedAnswer !== null) return;

@@ -16,13 +16,34 @@ const iconMap: Record<string, LucideIcon> = {
   Crown: Crown,
 };
 
+const getBadgeStyle = (name: string) => {
+  switch (name) {
+    case 'Początkujący': 
+      return 'text-yellow-600 bg-yellow-100 border-yellow-200 shadow-yellow-200';
+    case 'Pilny Uczeń': 
+      return 'text-blue-600 bg-blue-100 border-blue-200 shadow-blue-200';
+    case 'Snajper': 
+      return 'text-red-600 bg-red-100 border-red-200 shadow-red-200'; 
+    case 'Szybki Bill': 
+      return 'text-purple-600 bg-purple-100 border-purple-200 shadow-purple-200';
+    case 'Niezniszczalny': 
+      return 'text-green-600 bg-green-100 border-green-200 shadow-green-200'; 
+    case 'Król Kodu': 
+      return 'text-amber-700 bg-amber-100 border-amber-400 shadow-amber-300'; 
+    case 'Mistrz Next.js': 
+      return 'text-white bg-black border-gray-600 shadow-gray-400'; 
+      
+    default: 
+      return 'text-gray-500 bg-gray-100 border-gray-200';
+  }
+};
+
 type Badge = {
   id: number;
   name: string;
   description: string;
   icon_name: string;
   required_level: number;
-  color_class: string; // Tu przyjdzie gotowy styl z bazy (np. bg-red-100 shadow-red-200)
   criteria_type: string;
   criteria_value: number;
 };
@@ -34,11 +55,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     const fetchBadges = async () => {
-      const { data } = await supabase
-        .from('badges')
-        .select('*')
-        .order('required_level', { ascending: true });
-
+      const { data } = await supabase.from('badges').select('*').order('required_level', { ascending: true });
       if (data) setBadges(data);
       setLoading(false);
     };
@@ -76,83 +93,65 @@ export default function InventoryPage() {
             <div className="text-4xl drop-shadow-sm">💎</div>
             <div>
                 <h3 className="font-black text-xl text-gray-800">Doświadczenie</h3>
-                <p className="text-gray-400 font-bold">{xp} XP (Poziom {level})</p>
+                <p className="text-gray-400 font-bold">{xp} XP (Level {level})</p>
             </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border-2 border-gray-200 border-b-[6px] p-6 sm:p-8 shadow-sm">
-        <div className="flex justify-between items-end mb-6">
+      <div className="bg-white p-8 rounded-3xl border-2 border-gray-200 shadow-sm space-y-6">
+        <div className="flex justify-between items-center border-b border-gray-100 pb-4">
             <h2 className="text-2xl font-black text-gray-800">Kolekcja Odznak</h2>
-            <span className="text-sm font-bold bg-gray-100 px-3 py-1 rounded-full text-gray-500 shadow-inner">
-                Zdobyto: {loading ? "..." : unlockedCount} / {badges.length}
+            <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">
+                Odblokowano {unlockedCount} / {badges.length}
             </span>
         </div>
 
         {loading ? (
-           <div className="text-center py-10 font-bold text-gray-400 animate-pulse">Ładowanie odznak...</div>
+            <div className="text-center py-10 text-gray-400 font-bold animate-pulse">Ładowanie kolekcji...</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {badges.map((badge) => {
-                  const isUnlocked = isBadgeUnlocked(badge);
-                  const IconComponent = iconMap[badge.icon_name] || Star;
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {badges.map((badge) => {
+                    const unlocked = isBadgeUnlocked(badge);
+                    const Icon = iconMap[badge.icon_name] || Star;
+                    
+                    const style = getBadgeStyle(badge.name);
 
-                  return (
-                      <div 
-                          key={badge.id}
-                          className={`
-                              relative p-4 rounded-2xl border-2 flex flex-col items-center text-center gap-3 transition-all duration-300
-                              ${isUnlocked 
-                                  // Dodajemy shadow-md, żeby cień z bazy był widoczny
-                                  ? "bg-white border-gray-100 shadow-md scale-100 opacity-100 hover:scale-105 hover:shadow-lg" 
-                                  : "bg-gray-50 border-gray-100 opacity-60 grayscale"
-                              }
-                          `}
-                      >
-                          {!isUnlocked && (
-                              <div className="absolute top-2 right-2 text-gray-400">
-                                  <Lock size={16} />
-                              </div>
-                          )}
-
-                          <div className={`
-                              w-16 h-16 rounded-2xl flex items-center justify-center text-3xl border-b-4 mb-1 transition-colors
-                              ${isUnlocked ? badge.color_class : "bg-gray-200 text-gray-400 border-gray-300"}
-                          `}>
-                              <IconComponent size={32} strokeWidth={2} />
-                          </div>
-
-                          <div>
-                              <h3 className="font-black text-gray-800 leading-tight">{badge.name}</h3>
-                              <p className="text-xs font-bold text-gray-400 mt-1">{badge.description}</p>
-                          </div>
-
-                          {!isUnlocked && (
-                              <div className="w-full mt-2">
-                                  <p className="text-[10px] font-bold text-gray-400 mb-1 uppercase">
-                                    {badge.criteria_type === 'level' && `Wymagany Lvl ${badge.criteria_value}`}
-                                    {badge.criteria_type === 'games' && `Gry: ${gamesPlayed}/${badge.criteria_value}`}
-                                    {badge.criteria_type === 'perfect' && `Perfekcyjne: ${perfectGames}/${badge.criteria_value}`}
-                                  </p>
-                                  <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-                                      <div 
-                                          className="h-full bg-gray-400 rounded-full" 
-                                          style={{ width: `${Math.min(100, (level / badge.criteria_value) * 100)}%` }}
-                                      ></div>
-                                  </div>
-                              </div>
-                          )}
-                      </div>
-                  );
-              })}
-          </div>
+                    return (
+                        <div key={badge.id} className={`
+                            relative p-4 rounded-2xl border-2 flex items-center gap-4 transition-all
+                            ${!unlocked 
+                                ? "bg-gray-50 border-gray-100 opacity-60 grayscale" 
+                                : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-md hover:-translate-y-1"}
+                        `}>
+                            {!unlocked && <div className="absolute top-2 right-2 text-gray-300"><Lock size={16} /></div>}
+                            
+                            <div className={`
+                                w-14 h-14 rounded-2xl flex items-center justify-center text-2xl border-b-[3px] shadow-sm
+                                ${!unlocked ? "bg-gray-100 text-gray-300 border-gray-200" : style}
+                            `}>
+                                <Icon size={28} />
+                            </div>
+                            
+                            <div>
+                                <h4 className="font-black text-gray-800">{badge.name}</h4>
+                                <p className="text-xs font-bold text-gray-400 leading-tight mb-1">{badge.description}</p>
+                                {!unlocked && (
+                                    <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded font-bold uppercase">
+                                        Wymaga Lvl {badge.required_level}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         )}
       </div>
 
       <Link href="/dashboard" className="block">
         <Button3D variant="neutral" fullWidth>
             <div className="flex items-center justify-center gap-2">
-                <ArrowLeft size={20} /> Wróć do Dashboardu
+                <ArrowLeft size={20} /> Wróć do Menu
             </div>
         </Button3D>
       </Link>

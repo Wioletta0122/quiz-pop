@@ -17,8 +17,15 @@ export default function SettingsPage() {
   const [inputName, setInputName] = useState(name);
   const [selectedAvatar, setSelectedAvatar] = useState(avatar);
   const [selectedRank, setSelectedRank] = useState(rank);
+  
   const [availableRanks, setAvailableRanks] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setInputName(name);
+    setSelectedAvatar(avatar);
+    setSelectedRank(rank);
+  }, [name, avatar, rank]);
 
   useEffect(() => {
     const fetchRanks = async () => {
@@ -51,7 +58,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="bg-white p-6 sm:p-8 rounded-3xl border-2 border-gray-200 shadow-sm space-y-8">
-        
+
         <div className="space-y-2">
             <label className="font-black text-gray-700 ml-1">Twoja Ksywka</label>
             <input 
@@ -89,41 +96,45 @@ export default function SettingsPage() {
                 <Award size={18} /> Wybierz Rangę
             </label>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {availableRanks.map((r) => {
-                    const isUnlocked = level >= r.min_level;
-                    const isSelected = selectedRank === r.name;
+            {availableRanks.length === 0 ? (
+                <div className="text-gray-400 text-sm font-bold">Ładowanie rang...</div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {availableRanks.map((r) => {
+                        const isUnlocked = level >= r.min_level;
+                        const isSelected = selectedRank === r.name;
 
-                    return (
-                        <button
-                            key={r.id}
-                            disabled={!isUnlocked}
-                            onClick={() => setSelectedRank(r.name)}
-                            className={`
-                                relative flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left
-                                ${!isUnlocked 
-                                    ? "bg-gray-50 border-gray-100 opacity-60 cursor-not-allowed" 
-                                    : "bg-white hover:border-gray-300 cursor-pointer"}
-                                ${isSelected ? "border-primary ring-2 ring-primary ring-offset-2 bg-purple-50" : "border-gray-200"}
-                            `}
-                        >
-                            <div>
-                                <div className={`font-black text-sm ${r.color_class}`}>
-                                    {r.name}
-                                </div>
-                                {!isUnlocked && (
-                                    <div className="text-[10px] font-bold text-gray-400 uppercase mt-1">
-                                        Wymagany Lvl {r.min_level}
+                        return (
+                            <button
+                                key={r.id}
+                                disabled={!isUnlocked}
+                                onClick={() => setSelectedRank(r.name)}
+                                className={`
+                                    relative flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left
+                                    ${!isUnlocked 
+                                        ? "bg-gray-50 border-gray-100 opacity-60 cursor-not-allowed" 
+                                        : "bg-white hover:border-gray-300 cursor-pointer"}
+                                    ${isSelected ? "border-primary ring-2 ring-primary ring-offset-2 bg-purple-50" : "border-gray-200"}
+                                `}
+                            >
+                                <div>
+                                    <div className={`font-black text-sm ${r.color_class || 'text-gray-800'}`}>
+                                        {r.name}
                                     </div>
-                                )}
-                            </div>
+                                    {!isUnlocked && (
+                                        <div className="text-[10px] font-bold text-gray-400 uppercase mt-1">
+                                            Wymagany Lvl {r.min_level}
+                                        </div>
+                                    )}
+                                </div>
 
-                            {isSelected && <div className="text-primary bg-white rounded-full p-1"><Check size={16} strokeWidth={3} /></div>}
-                            {!isUnlocked && <Lock size={16} className="text-gray-300" />}
-                        </button>
-                    );
-                })}
-            </div>
+                                {isSelected && <div className="text-primary bg-white rounded-full p-1"><Check size={16} strokeWidth={3} /></div>}
+                                {!isUnlocked && <Lock size={16} className="text-gray-300" />}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
         </div>
 
         <div onClick={!isSaving ? handleSave : undefined}>

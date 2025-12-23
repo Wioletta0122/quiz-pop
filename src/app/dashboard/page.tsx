@@ -22,9 +22,7 @@ const getBadgeStyle = (name: string) => {
     case 'Szybki Bill': return 'text-purple-600 bg-purple-100 border-purple-200 shadow-purple-200';
     case 'Niezniszczalny': return 'text-green-600 bg-green-100 border-green-200 shadow-green-200';
     case 'Król Kodu': return 'text-amber-700 bg-amber-100 border-amber-400 shadow-amber-300';
-    
     case 'Mistrz Next.js': return 'text-white bg-black border-gray-600 shadow-gray-400';
-
     default: return 'text-gray-500 bg-gray-100 border-gray-200';
   }
 };
@@ -77,10 +75,13 @@ const AchievementRow = ({ icon, title, desc, isUnlocked, badgeName }: any) => {
 
 export default function DashboardPage() {
   const { xp, level, logout, name, avatar, rank, gamesPlayed, perfectGames, selectedBadges, updateSelectedBadges, dailyChallenge } = useGame();
-  const xpPercentage = Math.min(xp, 100); 
+  
   const [allBadges, setAllBadges] = useState<any[]>([]);
   const [isChoosingBadges, setIsChoosingBadges] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false); // NOWE
   const [tempSelected, setTempSelected] = useState<number[]>([]);
+
+  const xpPercentage = Math.min(xp, 100); 
 
   useEffect(() => {
     const fetchBadges = async () => {
@@ -90,15 +91,34 @@ export default function DashboardPage() {
     fetchBadges();
   }, []);
 
-  const handleLogout = async () => { if (window.confirm("Wylogować?")) await logout(); };
-  const startChoosing = () => { setTempSelected(selectedBadges || []); setIsChoosingBadges(true); };
+  const handleLogoutClick = () => setIsLogoutModalOpen(true);
+  const confirmLogout = async () => {
+    setIsLogoutModalOpen(false);
+    await logout();
+  };
+
+  const startChoosingBadges = () => {
+    setTempSelected(selectedBadges || []);
+    setIsChoosingBadges(true);
+  };
+
   const toggleBadge = (id: number) => {
     if (tempSelected.includes(id)) setTempSelected(tempSelected.filter(b => b !== id));
     else if (tempSelected.length < 3) setTempSelected([...tempSelected, id]);
-    else alert("Max 3 odznaki!");
+    else alert("Maksymalnie 3 odznaki!");
   };
-  const saveBadges = async () => { await updateSelectedBadges(tempSelected); setIsChoosingBadges(false); };
-  const isBadgeUnlocked = (b: any) => (b.criteria_type === 'games' ? gamesPlayed >= b.criteria_value : b.criteria_type === 'perfect' ? perfectGames >= b.criteria_value : level >= b.criteria_value);
+
+  const saveBadges = async () => {
+    await updateSelectedBadges(tempSelected);
+    setIsChoosingBadges(false);
+  };
+
+  const isBadgeUnlocked = (b: any) => (
+    b.criteria_type === 'games' ? gamesPlayed >= b.criteria_value : 
+    b.criteria_type === 'perfect' ? perfectGames >= b.criteria_value : 
+    level >= b.criteria_value
+  );
+
   const displayBadges = selectedBadges?.length > 0 ? allBadges.filter(b => selectedBadges.includes(b.id)) : [];
 
   return (
@@ -111,7 +131,9 @@ export default function DashboardPage() {
             <SidebarItem icon={Backpack} label="Ekwipunek" href="/inventory" />
             <SidebarItem icon={ShoppingBag} label="Sklep" href="/shop" />
             <SidebarItem icon={Settings} label="Ustawienia" href="/settings" />
-            <div className="mt-auto pt-4 border-t border-gray-100"><SidebarItem icon={LogOut} label="Wyloguj" onClick={handleLogout} /></div>
+            <div className="mt-auto pt-4 border-t border-gray-100">
+                <SidebarItem icon={LogOut} label="Wyloguj" onClick={handleLogoutClick} />
+            </div>
         </nav>
 
         <div className="flex-1 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-8 w-full">
@@ -123,7 +145,6 @@ export default function DashboardPage() {
                   <p className="text-purple-100 mb-4 font-medium max-w-md text-lg">
                     {dailyChallenge ? dailyChallenge.description : "Ładowanie wyzwania..."}
                   </p>
-                  
                   {dailyChallenge && (
                     <Link href={`/quiz?category=${dailyChallenge.category}`}>
                       <button className="bg-white text-[#8b5cf6] font-extrabold py-3 px-6 rounded-xl border-b-4 border-gray-200 hover:scale-105 active:scale-95 transition-all shadow-sm">
@@ -135,7 +156,6 @@ export default function DashboardPage() {
               <div className="absolute -right-5 -bottom-5 text-9xl opacity-20 -rotate-12 select-none pointer-events-none">🚀</div>
             </div>
 
-            {/* KAFELKI */}
             <div>
               <h2 className="text-2xl font-black text-gray-800 mb-6">Wybierz Kategorię</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -159,14 +179,14 @@ export default function DashboardPage() {
               </div>
               <hr className="border-gray-100 my-6" />
               <div>
-                  <div className="flex justify-between items-center mb-4"><h4 className="font-extrabold text-gray-400 text-xs uppercase tracking-widest">Twoje Odznaki</h4><button onClick={startChoosing} className="text-xs font-bold text-primary hover:text-primary-dark flex items-center gap-1"><Edit2 size={12} /> Zmień</button></div>
+                  <div className="flex justify-between items-center mb-4"><h4 className="font-extrabold text-gray-400 text-xs uppercase tracking-widest">Twoje Odznaki</h4><button onClick={startChoosingBadges} className="text-xs font-bold text-primary hover:text-primary-dark flex items-center gap-1"><Edit2 size={12} /> Zmień</button></div>
                   {displayBadges.length > 0 ? (
                       <div className="space-y-3">{displayBadges.map(b => { const Icon = iconMap[b.icon_name] || Star; const style = getBadgeStyle(b.name); return (<div key={b.id} className="flex items-center gap-4 py-2 border-b border-dashed border-gray-100 last:border-0"><div className={`w-10 h-10 rounded-xl flex items-center justify-center border-b-2 shadow-sm ${style}`}><Icon size={18} /></div><div><div className="font-black text-sm text-gray-800">{b.name}</div><div className="text-[10px] font-bold text-gray-400">{b.description}</div></div></div>)})}</div>
                   ) : <div className="text-center py-4 text-gray-400 text-sm font-bold border-2 border-dashed border-gray-100 rounded-xl">Wybierz odznaki!</div>}
               </div>
               <hr className="border-gray-100 my-6" />
               <div>
-                  <h4 className="font-extrabold text-gray-400 text-xs uppercase tracking-widest mb-4">Ostatnie Osiągnięcia</h4>
+                  <h4 className="font-extrabold text-gray-400 text-xs uppercase tracking-widest mb-4">Osiągnięcia</h4>
                   <AchievementRow icon={<Target size={20} />} title="Snajper" desc="100% poprawnych" isUnlocked={perfectGames >= 1} badgeName="Snajper" />
                   <AchievementRow icon={<BookOpen size={20} />} title="Kujon" desc="Ukończ 5 quizów" isUnlocked={gamesPlayed >= 5} badgeName="Pilny Uczeń" />
                   <AchievementRow icon={<Crown size={20} />} title="Król JS" desc="Osiągnij 10 Level" isUnlocked={level >= 10} badgeName="Król Kodu" />
@@ -174,17 +194,33 @@ export default function DashboardPage() {
           </aside>
         </div>
       </div>
-      
-      {/* MODAL */}
+
       {isChoosingBadges && (
           <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
               <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 border-2 border-gray-100">
-                  <div className="text-center mb-6"><h2 className="text-2xl font-black text-gray-800">Wybierz Odznaki</h2><p className="text-gray-500 font-bold">Max 3 odznaki widoczne w profilu.</p></div>
+                  <div className="text-center mb-6"><h2 className="text-2xl font-black text-gray-800">Wybierz Odznaki</h2><p className="text-gray-500 font-bold">Max 3 widoczne w profilu.</p></div>
                   <div className="grid grid-cols-3 gap-3 mb-6 max-h-[60vh] overflow-y-auto p-2 custom-scrollbar">{allBadges.map(b => { const unlocked = isBadgeUnlocked(b); const isSelected = tempSelected.includes(b.id); const Icon = iconMap[b.icon_name] || Star; const style = getBadgeStyle(b.name); return (<button key={b.id} disabled={!unlocked} onClick={() => toggleBadge(b.id)} className={`relative p-3 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all shadow-sm ${!unlocked ? "opacity-50 grayscale cursor-not-allowed border-gray-100 bg-gray-50 shadow-none" : "cursor-pointer"} ${isSelected ? "border-primary bg-purple-50 ring-2 ring-primary ring-offset-2 shadow-md" : "border-gray-200 hover:border-gray-300 hover:-translate-y-1 hover:shadow-md"}`}>{isSelected && <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-0.5 shadow-sm"><Check size={12}/></div>}<div className={`w-12 h-12 rounded-xl flex items-center justify-center border-b-2 shadow-sm ${unlocked ? style : 'bg-gray-100 border-gray-200'}`}><Icon size={24} /></div><span className="text-xs font-bold text-gray-700 leading-tight">{b.name}</span></button>)})}</div>
                   <div className="flex gap-3"><div className="w-full" onClick={() => setIsChoosingBadges(false)}><Button3D variant="neutral" fullWidth>Anuluj</Button3D></div><div className="w-full" onClick={saveBadges}><Button3D variant="success" fullWidth>Zapisz</Button3D></div></div>
               </div>
           </div>
       )}
+
+      {isLogoutModalOpen && (
+          <div className="fixed inset-0 bg-black/60 z-[110] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200">
+              <div className="bg-white rounded-[40px] p-8 w-full max-w-sm shadow-[0_20px_50px_rgba(0,0,0,0.2)] border-4 border-gray-100 text-center animate-in zoom-in-95 duration-300">
+                  <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 border-b-4 border-red-200 shadow-inner">
+                      <LogOut size={40} strokeWidth={2.5} className="ml-1" />
+                  </div>
+                  <h2 className="text-3xl font-black text-gray-800 mb-2">Uciekasz?</h2>
+                  <p className="text-gray-500 font-bold mb-8 leading-tight">Na pewno chcesz się wylogować i opuścić grę?</p>
+                  <div className="flex flex-col gap-3">
+                      <div onClick={confirmLogout}><Button3D variant="danger" fullWidth>Tak, wyloguj</Button3D></div>
+                      <div onClick={() => setIsLogoutModalOpen(false)}><Button3D variant="neutral" fullWidth>Zostaję!</Button3D></div>
+                  </div>
+              </div>
+          </div>
+      )}
+
     </div>
   );
 }

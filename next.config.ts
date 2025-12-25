@@ -31,12 +31,14 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 
 function generateCSP() {
+  const isDev = process.env.NODE_ENV !== 'production';
+
   const policy = {
     'default-src': ["'self'"],
     'script-src': [
       "'self'",
       "'unsafe-inline'",
-      "'unsafe-eval'",
+      isDev ? "'unsafe-eval'" : '',
       "https://js.hcaptcha.com",
       "https://hcaptcha.com",
       "https://*.hcaptcha.com"
@@ -68,11 +70,19 @@ function generateCSP() {
     'font-src': [
       "'self'",
       "data:"
-    ]
+    ],
+    'object-src': ["'none'"],
+    'base-uri': ["'self'"]
   };
 
   return Object.entries(policy)
-    .map(([key, values]) => `${key} ${values.join(' ')}`)
+    .map(([key, values]) => {
+      const filteredValues = values.filter(v => v !== '');
+      if (filteredValues.length > 0) {
+        return `${key} ${filteredValues.join(' ')}`;
+      }
+      return '';
+    })
     .join('; ')
     .replace(/\s{2,}/g, ' ')
     .trim();

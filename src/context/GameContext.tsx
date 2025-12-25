@@ -210,13 +210,40 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const registerWithEmail = async (email: string, pass: string, name: string) => {
     setIsLoading(true);
-    const { data, error } = await supabase.auth.signUp({ email, password: pass });
-    if (error) { setIsLoading(false); return { error: error.message }; }
+    
+    const { data, error } = await supabase.auth.signUp({ 
+      email, 
+      password: pass,
+      options: {
+        data: {
+          name: name,
+          full_name: name,
+          avatar_url: '🦊'
+        }
+      }
+    });
+
+    if (error) { 
+      setIsLoading(false); 
+      return { error: error.message }; 
+    }
+
     if (data.user) {
-      await supabase.from('profiles').insert([{ id: data.user.id, username: name, avatar: '🦊', xp: 0, level: 1, lives: 5, games_played: 0, perfect_games: 0, selected_rank: 'Hello World', has_clutch_win: false }]);
-      setUser(data.user); setName(name); setXp(0); setLevel(1); setLives(5); setAvatar('🦊'); setRank('Hello World'); setHasClutchWin(false);
-      router.refresh(); router.push("/dashboard");
-    } else { setIsLoading(false); }
+      setUser(data.user); 
+      setName(name); 
+      setAvatar('🦊');
+      setXp(0); 
+      setLevel(1); 
+      setLives(5); 
+      setRank('Hello World'); 
+      setHasClutchWin(false);
+      
+      router.refresh(); 
+      router.push("/dashboard");
+    } else { 
+      setIsLoading(false); 
+    }
+    
     return { error: null };
   };
 

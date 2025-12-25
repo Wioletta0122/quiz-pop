@@ -30,7 +30,12 @@ export default function RegisterPage() {
     }
 
     const res = await registerWithEmail(email, password, username, captchaToken);
-    if (res.error) setError(res.error);
+    
+    if (res.error) {
+        console.error("Błąd rejestracji:", res.error);
+        setError(res.error);
+        setCaptchaToken(null); 
+    }
   };
 
   return (
@@ -47,8 +52,8 @@ export default function RegisterPage() {
         <form onSubmit={handleRegister} className="bg-white p-8 rounded-3xl border-2 border-gray-200 border-b-[6px] space-y-5 shadow-sm">
             
             {error && (
-                <div className="bg-red-50 text-red-500 p-3 rounded-xl text-sm font-bold border border-red-100 text-center">
-                    {error}
+                <div className="bg-red-50 text-red-500 p-3 rounded-xl text-sm font-bold border border-red-100 text-center animate-pulse">
+                    ⚠️ {error}
                 </div>
             )}
 
@@ -94,6 +99,7 @@ export default function RegisterPage() {
                 <HCaptcha 
                   sitekey="24487f82-9546-4770-872e-461cbc622d68" 
                   onVerify={(token) => setCaptchaToken(token)}
+                  onExpire={() => setCaptchaToken(null)}
                 />
             </div>
 

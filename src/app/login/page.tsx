@@ -5,18 +5,34 @@ import Button3D from "@/components/Button3D";
 import { useGame } from "@/context/GameContext";
 import { LogIn, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 export default function LoginPage() {
   const { loginWithEmail, isLoading } = useGame();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const res = await loginWithEmail(email, password);
-    if (res.error) setError("Błędny email lub hasło!");
+
+    // Sprawdzenie czy użytkownik rozwiązał CAPTCHA
+    if (!captchaToken) {
+        setError("Potwierdź, że nie jesteś robotem! 🤖");
+        return;
+    }
+    
+    // Przekazujemy token do funkcji w Context
+    const res = await loginWithEmail(email, password, captchaToken);
+    
+    if (res.error) {
+        console.error("Błąd logowania:", res.error);
+        setError(res.error);
+        // Opcjonalnie: resetujemy token po błędzie, aby wymusić ponowną weryfikację
+        setCaptchaToken(null);
+    }
   };
 
   return (
@@ -32,8 +48,8 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="bg-white p-8 rounded-3xl border-2 border-gray-200 border-b-[6px] space-y-5">
             
             {error && (
-                <div className="bg-red-50 text-red-500 p-3 rounded-xl text-sm font-bold border border-red-100 text-center">
-                    {error}
+                <div className="bg-red-50 text-red-500 p-3 rounded-xl text-sm font-bold border border-red-100 text-center animate-pulse">
+                    ⚠️ {error}
                 </div>
             )}
 
@@ -58,6 +74,15 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl p-3 font-bold focus:outline-none focus:border-primary transition-colors"
                     placeholder="••••••••"
+                />
+            </div>
+
+            {/* Sekcja CAPTCHA */}
+            <div className="flex justify-center py-2">
+                <HCaptcha 
+                  sitekey="24487f82-9546-4770-872e-461cbc622d68" 
+                  onVerify={(token) => setCaptchaToken(token)}
+                  onExpire={() => setCaptchaToken(null)}
                 />
             </div>
 

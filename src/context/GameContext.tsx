@@ -38,7 +38,7 @@ type GameContextType = {
   updateSelectedBadges: (badgeIds: number[]) => Promise<void>;
   isBadgeUnlocked: (badge: any) => boolean;
   
-  loginWithEmail: (email: string, pass: string) => Promise<{ error: string | null }>;
+  loginWithEmail: (email: string, pass: string, captchaToken: string) => Promise<{ error: string | null }>;
   registerWithEmail: (email: string, pass: string, name: string, captchaToken: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
 };
@@ -153,12 +153,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = async (uid: string) => {
     try {
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
-      
-      if (error) {
-          console.error(error);
-      }
-
+      const { data } = await supabase.from('profiles').select('*').eq('id', uid).single();
       if (data) {
         setXp(data.xp); setLevel(data.level); setLives(data.lives);
         setName(data.username); setAvatar(data.avatar); setRank(data.selected_rank || "Hello World");
@@ -171,17 +166,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             checkRegenLogic(data.lives, data.last_regen_at, uid);
         }
       }
-    } catch (error) { 
-        console.error(error); 
-    } finally { 
-        setIsLoading(false); 
-    }
+    } catch (error) { console.error(error); } finally { setIsLoading(false); }
   };
 
   const isBadgeUnlocked = (badge: any) => {
     if (badge.criteria_type === 'clutch') return hasClutchWin;
     if (badge.criteria_type === 'games') return gamesPlayed >= badge.criteria_value;
     if (badge.criteria_type === 'perfect') return perfectGames >= badge.criteria_value;
+    
     return level >= badge.required_level;
   };
 
@@ -189,12 +181,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
     const newGames = gamesPlayed + 1;
     const newPerfect = isPerfect ? perfectGames + 1 : perfectGames;
+    
     const isClutch = lives === 1;
 
     setGamesPlayed(newGames); 
     setPerfectGames(newPerfect);
     
-    const updateData: any = { games_played: newGames, perfect_games: newPerfect };
+    const updateData: any = { 
+        games_played: newGames, 
+        perfect_games: newPerfect 
+    };
 
     if (isClutch) {
         setHasClutchWin(true);
@@ -230,6 +226,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const loseLife = async () => {
     if (!user) return;
     const newLives = lives > 0 ? lives - 1 : 0;
+    
     const updates: any = { lives: newLives };
 
     if (lives === 5 && newLives < 5) {
@@ -275,23 +272,28 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setXp(0); setLevel(1); setLives(5); setGamesPlayed(0); setPerfectGames(0); setSelectedBadges([]); setRank('Hello World'); setHasClutchWin(false);
   };
 
-  const loginWithEmail = async (email: string, pass: string) => {
+  const loginWithEmail = async (email: string, pass: string, captchaToken: string) => {
     setIsLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-    
-    if (!error && data.user) { 
-        await fetchProfile(data.user.id);
+    const { error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password: pass,
+        options: {
+            captchaToken
+        } 
+    });
+
+    if (!error) { 
         router.refresh(); 
         router.push("/dashboard"); 
-    } else {
-        setIsLoading(false);
+    } else { 
+        setIsLoading(false); 
     }
+    
     return { error: error?.message || null };
   };
 
   const registerWithEmail = async (email: string, pass: string, name: string, captchaToken: string) => {
     setIsLoading(true);
-    
     const { data, error } = await supabase.auth.signUp({ 
       email, 
       password: pass,
@@ -305,43 +307,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    if (error) { 
-        setIsLoading(false); 
-        return { error: error.message }; 
-    }
+    if (error) { setIsLoading(false); return { error: error.message }; }
     
     if (data.user) {
-      const { error: profileError } = await supabase.from('profiles').insert({
-          id: data.user.id,
-          username: name,
-          avatar: '🦊',
-          level: 1,
-          lives: 5,
-          xp: 0,
-          games_played: 0
-      });
-
-      if (profileError) {
-          console.error(profileError);
-      }
-
       setUser(data.user); setName(name); setXp(0); setLevel(1); setLives(5); setAvatar('🦊'); setRank('Hello World'); setHasClutchWin(false);
-      
-      router.refresh(); 
-      router.push("/dashboard");
-    } else { 
-        setIsLoading(false); 
-    }
+      router.refresh(); router.push("/dashboard");
+    } else { setIsLoading(false); }
     return { error: null };
   };
 
   const logout = async () => {
-    setIsLoading(true); 
-    setUser(null); 
-    await supabase.auth.signOut();
-    router.refresh(); 
-    router.push("/login"); 
-    setIsLoading(false);
+    setIsLoading(true); setUser(null); await supabase.auth.signOut();
+    router.refresh(); router.push("/login"); setIsLoading(false);
   };
 
   return (

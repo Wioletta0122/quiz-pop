@@ -36,9 +36,10 @@ type GameContextType = {
   updateProfile: (name: string, avatar: string, rank: string) => Promise<void>;
   finishGame: (isPerfect: boolean) => Promise<void>;
   updateSelectedBadges: (badgeIds: number[]) => Promise<void>;
+  isBadgeUnlocked: (badge: any) => boolean;
   
   loginWithEmail: (email: string, pass: string) => Promise<{ error: string | null }>;
-  registerWithEmail: (email: string, pass: string, name: string) => Promise<{ error: string | null }>;
+  registerWithEmail: (email: string, pass: string, name: string, captchaToken: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
 };
 
@@ -168,6 +169,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     } catch (error) { console.error(error); } finally { setIsLoading(false); }
   };
 
+  const isBadgeUnlocked = (badge: any) => {
+    if (badge.criteria_type === 'clutch') return hasClutchWin;
+    if (badge.criteria_type === 'games') return gamesPlayed >= badge.criteria_value;
+    if (badge.criteria_type === 'perfect') return perfectGames >= badge.criteria_value;
+    
+    return level >= badge.required_level;
+  };
+
   const finishGame = async (isPerfect: boolean) => {
     if (!user) return;
     const newGames = gamesPlayed + 1;
@@ -270,12 +279,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return { error: error?.message || null };
   };
 
-  const registerWithEmail = async (email: string, pass: string, name: string) => {
+  const registerWithEmail = async (email: string, pass: string, name: string, captchaToken: string) => {
     setIsLoading(true);
     const { data, error } = await supabase.auth.signUp({ 
       email, 
       password: pass,
       options: {
+        captchaToken,
         data: {
           name: name,
           full_name: name,
@@ -304,6 +314,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         dailyChallenge,
         isLoading, user,
         addXp, loseLife, buyLives, getFreeLife, resetProgress, updateProfile, finishGame, updateSelectedBadges,
+        isBadgeUnlocked,
         loginWithEmail, registerWithEmail, logout 
     }}>
       {children}

@@ -75,21 +75,29 @@ const AchievementRow = ({ icon, title, desc, isUnlocked, badgeName }: any) => {
 };
 
 export default function DashboardPage() {
-  const { xp, level, logout, name, avatar, rank, gamesPlayed, perfectGames, selectedBadges, updateSelectedBadges, dailyChallenge, hasClutchWin } = useGame();
+  const { xp, level, logout, name, avatar, rank, gamesPlayed, perfectGames, selectedBadges, updateSelectedBadges, dailyChallenge, hasClutchWin, isBadgeUnlocked, updateProfile } = useGame();
   
   const [allBadges, setAllBadges] = useState<any[]>([]);
+  const [allRanks, setAllRanks] = useState<any[]>([]);
+  
   const [isChoosingBadges, setIsChoosingBadges] = useState(false);
+  const [isChoosingRank, setIsChoosingRank] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const [tempSelected, setTempSelected] = useState<number[]>([]);
+  
+  const [tempSelectedBadges, setTempSelectedBadges] = useState<number[]>([]);
+  const [tempRank, setTempRank] = useState(rank);
 
   const xpPercentage = Math.min(xp, 100); 
 
   useEffect(() => {
-    const fetchBadges = async () => {
-      const { data } = await supabase.from('badges').select('*').order('required_level');
-      if (data) setAllBadges(data);
+    const fetchData = async () => {
+      const { data: badgesData } = await supabase.from('badges').select('*').order('required_level');
+      if (badgesData) setAllBadges(badgesData);
+
+      const { data: ranksData } = await supabase.from('ranks').select('*').order('min_level');
+      if (ranksData) setAllRanks(ranksData);
     };
-    fetchBadges();
+    fetchData();
   }, []);
 
   const handleLogoutClick = () => setIsLogoutModalOpen(true);
@@ -99,32 +107,40 @@ export default function DashboardPage() {
   };
 
   const startChoosingBadges = () => {
-    setTempSelected(selectedBadges || []);
+    setTempSelectedBadges(selectedBadges || []);
     setIsChoosingBadges(true);
   };
 
+  const startChoosingRank = () => {
+    setTempRank(rank);
+    setIsChoosingRank(true);
+  }
+
   const toggleBadge = (id: number) => {
-    if (tempSelected.includes(id)) setTempSelected(tempSelected.filter(b => b !== id));
-    else if (tempSelected.length < 3) setTempSelected([...tempSelected, id]);
+    if (tempSelectedBadges.includes(id)) setTempSelectedBadges(tempSelectedBadges.filter(b => b !== id));
+    else if (tempSelectedBadges.length < 3) setTempSelectedBadges([...tempSelectedBadges, id]);
     else alert("Maksymalnie 3 odznaki!");
   };
 
   const saveBadges = async () => {
     try {
-      await updateSelectedBadges(tempSelected);
+      await updateSelectedBadges(tempSelectedBadges);
       setIsChoosingBadges(false);
     } catch (error) {
       console.error(error);
-      alert("Wystąpił błąd zapisu! Spróbuj odświeżyć stronę.");
+      alert("Wystąpił błąd zapisu!");
     }
   };
 
-  const isBadgeUnlocked = (b: any) => {
-    if (b.criteria_type === 'clutch') return hasClutchWin;
-    if (b.criteria_type === 'games') return gamesPlayed >= b.criteria_value;
-    if (b.criteria_type === 'perfect') return perfectGames >= b.criteria_value;
-    return level >= b.required_level;
-  };
+  const saveRank = async () => {
+    try {
+      await updateProfile(name, avatar, tempRank);
+      setIsChoosingRank(false);
+    } catch (error) {
+        console.error(error);
+        alert("Wystąpił błąd zapisu rangi!");
+    }
+  }
 
   const displayBadges = selectedBadges?.length > 0 ? allBadges.filter(b => selectedBadges.includes(b.id)) : [];
 
@@ -178,7 +194,14 @@ export default function DashboardPage() {
               <div className="flex flex-col items-center text-center mb-6">
                   <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center text-5xl border-[4px] border-white mb-3 shadow-[0_4px_0_#10b981,0_8px_15px_rgba(16,185,129,0.2)]">{avatar}</div>
                   <h3 className="font-black text-xl text-gray-800 mt-2">{name}</h3>
-                  <span className="text-gray-400 font-bold text-sm uppercase tracking-wide">{rank}</span>
+                  
+                  <div className="flex items-center justify-center gap-2 mt-1">
+                     <span className="text-gray-400 font-bold text-sm uppercase tracking-wide">{rank}</span>
+                     <button onClick={startChoosingRank} className="text-gray-300 hover:text-purple-500 transition-colors p-1 rounded-full hover:bg-purple-50">
+                        <Edit2 size={14} />
+                     </button>
+                  </div>
+
                   <div className="w-full mt-6 text-left">
                       <div className="flex justify-between text-xs font-extrabold text-gray-500 mb-1"><span>Level {level}</span><span>{xp}/100 XP</span></div>
                       <div className="h-3 bg-gray-100 rounded-full overflow-hidden border border-gray-200"><div className="h-full bg-amber-400 rounded-full transition-all duration-500 shadow-[inset_0_-2px_0_rgba(0,0,0,0.1)]" style={{ width: `${xpPercentage}%` }}></div></div>
@@ -206,7 +229,7 @@ export default function DashboardPage() {
           <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
               <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 border-2 border-gray-100">
                   <div className="text-center mb-6"><h2 className="text-2xl font-black text-gray-800">Wybierz Odznaki</h2><p className="text-gray-500 font-bold">Max 3 widoczne w profilu.</p></div>
-                  <div className="grid grid-cols-3 gap-3 mb-6 max-h-[60vh] overflow-y-auto p-2 custom-scrollbar">{allBadges.map(b => { const unlocked = isBadgeUnlocked(b); const isSelected = tempSelected.includes(b.id); const Icon = iconMap[b.icon_name] || Star; const style = getBadgeStyle(b.name); return (<button key={b.id} disabled={!unlocked} onClick={() => toggleBadge(b.id)} className={`relative p-3 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all shadow-sm ${!unlocked ? "opacity-50 grayscale cursor-not-allowed border-gray-100 bg-gray-50 shadow-none" : "cursor-pointer"} ${isSelected ? "border-primary bg-purple-50 ring-2 ring-primary ring-offset-2 shadow-md" : "border-gray-200 hover:border-gray-300 hover:-translate-y-1 hover:shadow-md"}`}>{isSelected && <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-0.5 shadow-sm"><Check size={12}/></div>}<div className={`w-12 h-12 rounded-xl flex items-center justify-center border-b-2 shadow-sm ${unlocked ? style : 'bg-gray-100 border-gray-200'}`}><Icon size={24} /></div><span className="text-xs font-bold text-gray-700 leading-tight">{b.name}</span></button>)})}</div>
+                  <div className="grid grid-cols-3 gap-3 mb-6 max-h-[60vh] overflow-y-auto p-2 custom-scrollbar">{allBadges.map(b => { const unlocked = isBadgeUnlocked(b); const isSelected = tempSelectedBadges.includes(b.id); const Icon = iconMap[b.icon_name] || Star; const style = getBadgeStyle(b.name); return (<button key={b.id} disabled={!unlocked} onClick={() => toggleBadge(b.id)} className={`relative p-3 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all shadow-sm ${!unlocked ? "opacity-50 grayscale cursor-not-allowed border-gray-100 bg-gray-50 shadow-none" : "cursor-pointer"} ${isSelected ? "border-primary bg-purple-50 ring-2 ring-primary ring-offset-2 shadow-md" : "border-gray-200 hover:border-gray-300 hover:-translate-y-1 hover:shadow-md"}`}>{isSelected && <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-0.5 shadow-sm"><Check size={12}/></div>}<div className={`w-12 h-12 rounded-xl flex items-center justify-center border-b-2 shadow-sm ${unlocked ? style : 'bg-gray-100 border-gray-200'}`}><Icon size={24} /></div><span className="text-xs font-bold text-gray-700 leading-tight">{b.name}</span></button>)})}</div>
                   <div className="flex gap-3">
                       <div className="w-full">
                           <Button3D variant="neutral" fullWidth onClick={() => setIsChoosingBadges(false)}>Anuluj</Button3D>
@@ -217,6 +240,60 @@ export default function DashboardPage() {
                   </div>
               </div>
           </div>
+      )}
+
+      {isChoosingRank && (
+         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200 border-2 border-gray-100">
+               <div className="text-center mb-6">
+                  <h2 className="text-2xl font-black text-gray-800">Wybierz Tytuł</h2>
+                  <p className="text-gray-500 font-bold">Pokaż swój status!</p>
+               </div>
+               
+               <div className="grid grid-cols-2 gap-3 mb-6 max-h-[60vh] overflow-y-auto p-2 custom-scrollbar">
+                  {allRanks.map(r => {
+                     const isLocked = level < r.min_level;
+                     const isSelected = tempRank === r.name;
+                     
+                     return (
+                        <button 
+                           key={r.id} 
+                           disabled={isLocked}
+                           onClick={() => setTempRank(r.name)}
+                           className={`relative p-4 rounded-2xl border-2 flex flex-col items-center justify-center text-center gap-1 transition-all shadow-sm min-h-[100px]
+                           ${isLocked 
+                              ? "bg-gray-50 border-gray-100 opacity-60 grayscale cursor-not-allowed" 
+                              : isSelected 
+                                 ? "bg-purple-50 border-purple-500 ring-2 ring-purple-100 scale-[1.02]"
+                                 : "bg-white border-gray-200 hover:border-purple-300 hover:-translate-y-1"
+                           }`}
+                        >
+                           {isSelected && !isLocked && <div className="absolute top-2 right-2 bg-purple-500 text-white rounded-full p-0.5"><Check size={10} strokeWidth={4} /></div>}
+                           
+                           {isLocked && <div className="mb-1 text-gray-400"><Lock size={20} /></div>}
+                           
+                           <span className={`font-black text-sm leading-tight ${isLocked ? "text-gray-400" : r.color_class}`}>
+                              {r.name}
+                           </span>
+                           
+                           <span className="text-[10px] font-bold text-gray-400 mt-1">
+                              {isLocked ? `Lvl ${r.min_level}` : "Odblokowany"}
+                           </span>
+                        </button>
+                     )
+                  })}
+               </div>
+
+               <div className="flex gap-3">
+                  <div className="w-full">
+                     <Button3D variant="neutral" fullWidth onClick={() => setIsChoosingRank(false)}>Anuluj</Button3D>
+                  </div>
+                  <div className="w-full">
+                     <Button3D variant="success" fullWidth onClick={saveRank}>Zapisz</Button3D>
+                  </div>
+               </div>
+            </div>
+         </div>
       )}
 
       {isLogoutModalOpen && (

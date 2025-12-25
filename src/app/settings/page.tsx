@@ -3,158 +3,254 @@
 import { useState, useEffect } from "react";
 import { useGame } from "@/context/GameContext";
 import Button3D from "@/components/Button3D";
-import { ArrowLeft, Save, User, Award, Lock, Check } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { 
+  Save, Lock, Trash2, User, RefreshCw, AlertTriangle,
+  Home, Trophy, Backpack, ShoppingBag, Settings, LogOut 
+} from "lucide-react";
 import { supabase } from "@/utils/supabase";
 
-const AVAILABLE_AVATARS = ["🦊", "🐼", "🦁", "🐯", "🐸", "🐙", "🦄", "🤖", "👽", "👩‍💻", "👨‍💻", "🥷"];
+const SidebarItem = ({ icon: Icon, label, active = false, href, onClick }: any) => {
+  const content = (
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-extrabold transition-all duration-200 cursor-pointer ${active ? "bg-purple-50 text-[#8b5cf6] border border-purple-100" : "text-gray-400 hover:bg-gray-50 hover:text-gray-600 border border-transparent"}`}>
+      <Icon size={24} strokeWidth={2.5} />
+      <span>{label}</span>
+    </div>
+  );
+  if (href) return <Link href={href}>{content}</Link>;
+  return <div onClick={onClick}>{content}</div>;
+};
 
 export default function SettingsPage() {
-  const { name, avatar, rank, level, updateProfile } = useGame();
-  const router = useRouter();
-
-  const [inputName, setInputName] = useState(name);
-  const [selectedAvatar, setSelectedAvatar] = useState(avatar);
-  const [selectedRank, setSelectedRank] = useState(rank);
+  const { user, name, avatar, rank, updateProfile, logout } = useGame();
   
-  const [availableRanks, setAvailableRanks] = useState<any[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
+  const [newName, setNewName] = useState(name);
+  const [newAvatar, setNewAvatar] = useState(avatar);
+  const [password, setPassword] = useState("");
+  
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [isLoadingPass, setIsLoadingPass] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
-    setInputName(name);
-    setSelectedAvatar(avatar);
-    setSelectedRank(rank);
-  }, [name, avatar, rank]);
+    setNewName(name);
+    setNewAvatar(avatar);
+  }, [name, avatar]);
 
-  useEffect(() => {
-    const fetchRanks = async () => {
-      const { data } = await supabase.from('ranks').select('*').order('min_level', { ascending: true });
-      if (data) setAvailableRanks(data);
-    };
-    fetchRanks();
-  }, []);
-
-  const handleSave = async () => {
-    if (inputName.trim() === "") return alert("Podaj jakieś imię!");
-    if (inputName.length > 15) return alert("Za długa ksywka (max 15 znaków)!");
-
-    setIsSaving(true);
-    await updateProfile(inputName, selectedAvatar, selectedRank); 
-    setIsSaving(false);
-    
-    router.push("/dashboard");
+  const handleUpdateProfile = async () => {
+    setIsLoadingProfile(true);
+    setMessage(null);
+    try {
+      await updateProfile(newName, newAvatar, rank);
+      setMessage({ text: "Profil zaktualizowany! 🦊✨", type: 'success' });
+    } catch (error) {
+      setMessage({ text: "Błąd aktualizacji profilu.", type: 'error' });
+    } finally {
+      setIsLoadingProfile(false);
+    }
   };
 
+  const handleChangePassword = async () => {
+    if (password.length < 6) {
+      setMessage({ text: "Hasło musi mieć min. 6 znaków!", type: 'error' });
+      return;
+    }
+    setIsLoadingPass(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: password });
+      if (error) throw error;
+      setMessage({ text: "Hasło zostało zmienione! 🔐", type: 'success' });
+      setPassword("");
+    } catch (error) {
+      setMessage({ text: "Nie udało się zmienić hasła.", type: 'error' });
+    } finally {
+      setIsLoadingPass(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const { error } = await supabase.rpc('delete_own_account');
+      if (error) throw error;
+      await logout();
+    } catch (error) {
+      console.error(error);
+      alert("Wystąpił błąd podczas usuwania konta.");
+      setIsDeleteModalOpen(false);
+    }
+  };
+
+  const handleLogoutClick = () => setIsLogoutModalOpen(true);
+  const confirmLogout = async () => {
+    setIsLogoutModalOpen(false);
+    await logout();
+  };
+
+  const avatars = ["🦊", "🐼", "🦁", "🐯", "🐸", "🐙", "🦄", "🤖", "👽", "👻"];
+
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4 space-y-8">
-      
-      <div className="text-center space-y-2">
-        <div className="inline-block p-4 bg-gray-100 rounded-full text-gray-500 mb-2">
-            <User size={40} />
-        </div>
-        <h1 className="text-4xl font-black text-gray-800">Edytuj Profil</h1>
-        <p className="text-gray-500 font-bold">Dostosuj swoją postać i rangę!</p>
-      </div>
-
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border-2 border-gray-200 shadow-sm space-y-8">
-
-        <div className="space-y-2">
-            <label className="font-black text-gray-700 ml-1">Twoja Ksywka</label>
-            <input 
-                type="text" 
-                value={inputName}
-                onChange={(e) => setInputName(e.target.value)}
-                className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl p-4 font-bold text-lg focus:outline-none focus:border-primary transition-colors"
-                placeholder="Wpisz imię..."
-                maxLength={15}
-            />
-        </div>
-
-        <div className="space-y-2">
-            <label className="font-black text-gray-700 ml-1">Wybierz Awatar</label>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
-                {AVAILABLE_AVATARS.map((av) => (
-                    <button
-                        key={av}
-                        onClick={() => setSelectedAvatar(av)}
-                        className={`
-                            text-3xl p-3 rounded-2xl border-2 transition-all hover:scale-110
-                            ${selectedAvatar === av 
-                                ? "bg-primary-light border-primary shadow-md scale-110" 
-                                : "bg-white border-gray-100 grayscale opacity-70 hover:grayscale-0 hover:opacity-100"}
-                        `}
-                    >
-                        {av}
-                    </button>
-                ))}
+    <div className="py-8 px-4 max-w-[1400px] mx-auto relative min-h-screen">
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        
+        <nav className="hidden lg:flex w-64 flex-col gap-2 bg-white border-2 border-gray-200 rounded-3xl p-4 sticky top-24 h-[calc(100vh-120px)]">
+            <SidebarItem icon={Home} label="Start" href="/" />
+            <SidebarItem icon={Trophy} label="Ranking" href="/leaderboard" />
+            <SidebarItem icon={Backpack} label="Ekwipunek" href="/inventory" />
+            <SidebarItem icon={ShoppingBag} label="Sklep" href="/shop" />
+            <SidebarItem icon={Settings} label="Ustawienia" active href="/settings" />
+            <div className="mt-auto pt-4 border-t border-gray-100">
+                <SidebarItem icon={LogOut} label="Wyloguj" onClick={handleLogoutClick} />
             </div>
-        </div>
+        </nav>
 
-        <div className="space-y-3">
-            <label className="font-black text-gray-700 ml-1 flex items-center gap-2">
-                <Award size={18} /> Wybierz Rangę
-            </label>
+        <div className="flex-1 w-full max-w-3xl mx-auto">
+          
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-purple-100 text-purple-600 rounded-2xl border-2 border-purple-200">
+              <Settings size={32} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black text-gray-800">Ustawienia Konta</h1>
+              <p className="text-gray-500 font-bold">Zarządzaj swoim profilem i bezpieczeństwem.</p>
+            </div>
+          </div>
+
+          {message && (
+            <div className={`mb-6 p-4 rounded-2xl border-2 font-bold text-center animate-in slide-in-from-top-2 ${
+              message.type === 'success' 
+                ? 'bg-green-100 text-green-700 border-green-200' 
+                : 'bg-red-100 text-red-700 border-red-200'
+            }`}>
+              {message.text}
+            </div>
+          )}
+
+          <div className="space-y-6">
             
-            {availableRanks.length === 0 ? (
-                <div className="text-gray-400 text-sm font-bold">Ładowanie rang...</div>
-            ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {availableRanks.map((r) => {
-                        const isUnlocked = level >= r.min_level;
-                        const isSelected = selectedRank === r.name;
-
-                        return (
-                            <button
-                                key={r.id}
-                                disabled={!isUnlocked}
-                                onClick={() => setSelectedRank(r.name)}
-                                className={`
-                                    relative flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left
-                                    ${!isUnlocked 
-                                        ? "bg-gray-50 border-gray-100 opacity-60 cursor-not-allowed" 
-                                        : "bg-white hover:border-gray-300 cursor-pointer"}
-                                    ${isSelected ? "border-primary ring-2 ring-primary ring-offset-2 bg-purple-50" : "border-gray-200"}
-                                `}
-                            >
-                                <div>
-                                    <div className={`font-black text-sm ${r.color_class || 'text-gray-800'}`}>
-                                        {r.name}
-                                    </div>
-                                    {!isUnlocked && (
-                                        <div className="text-[10px] font-bold text-gray-400 uppercase mt-1">
-                                            Wymagany Lvl {r.min_level}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {isSelected && <div className="text-primary bg-white rounded-full p-1"><Check size={16} strokeWidth={3} /></div>}
-                                {!isUnlocked && <Lock size={16} className="text-gray-300" />}
-                            </button>
-                        );
-                    })}
+            <div className="bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-sm">
+              <h2 className="text-xl font-black text-gray-800 mb-6 flex items-center gap-2">
+                <User className="text-purple-500" /> Edytuj Profil
+              </h2>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Wybierz Awatar</label>
+                  <div className="flex flex-wrap gap-3">
+                    {avatars.map((a) => (
+                      <button
+                        key={a}
+                        onClick={() => setNewAvatar(a)}
+                        className={`text-3xl w-14 h-14 rounded-2xl border-2 flex items-center justify-center transition-all ${
+                          newAvatar === a 
+                            ? "bg-purple-100 border-purple-500 scale-110 shadow-md rotate-3" 
+                            : "bg-gray-50 border-gray-100 hover:bg-white hover:border-gray-300 hover:scale-105"
+                        }`}
+                      >
+                        {a}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-            )}
-        </div>
 
-        <div onClick={!isSaving ? handleSave : undefined}>
-            <Button3D variant="success" fullWidth>
-                <div className="flex items-center justify-center gap-2">
-                    <Save size={20} /> 
-                    {isSaving ? "Zapisywanie..." : "Zapisz Zmiany"}
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Twoja Ksywka</label>
+                  <input 
+                    type="text" 
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl p-4 font-bold text-gray-700 focus:outline-none focus:border-purple-500 focus:bg-white transition-colors"
+                    placeholder="Wpisz imię..."
+                  />
                 </div>
-            </Button3D>
-        </div>
 
+                <div onClick={!isLoadingProfile ? handleUpdateProfile : undefined}>
+                  <Button3D variant="primary" fullWidth>
+                      {isLoadingProfile ? <RefreshCw className="animate-spin" /> : <div className="flex items-center gap-2 justify-center"><Save size={18} /> Zapisz Zmiany</div>}
+                  </Button3D>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-sm">
+              <h2 className="text-xl font-black text-gray-800 mb-6 flex items-center gap-2">
+                <Lock className="text-blue-500" /> Zmień Hasło
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Nowe Hasło</label>
+                  <input 
+                    type="password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl p-4 font-bold text-gray-700 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                    placeholder="Min. 6 znaków"
+                  />
+                </div>
+                <div onClick={!isLoadingPass ? handleChangePassword : undefined}>
+                  <Button3D variant="neutral" fullWidth>
+                      {isLoadingPass ? <RefreshCw className="animate-spin" /> : "Zaktualizuj Hasło"}
+                  </Button3D>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-red-50 rounded-3xl p-8 border-2 border-red-100 shadow-sm opacity-80 hover:opacity-100 transition-all">
+              <h2 className="text-xl font-black text-red-600 mb-2 flex items-center gap-2">
+                <AlertTriangle /> Strefa Niebezpieczna
+              </h2>
+              <p className="text-red-400 text-sm font-bold mb-6">
+                Tej operacji nie można cofnąć. Stracisz wszystkie odznaki, XP i postęp w grze.
+              </p>
+              <div onClick={() => setIsDeleteModalOpen(true)}>
+                <Button3D variant="danger" fullWidth>
+                    <div className="flex items-center gap-2 justify-center"><Trash2 size={18} /> Usuń Konto</div>
+                </Button3D>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
 
-      <Link href="/dashboard" className="block">
-        <Button3D variant="neutral" fullWidth>
-            <div className="flex items-center justify-center gap-2">
-                <ArrowLeft size={20} /> Anuluj
-            </div>
-        </Button3D>
-      </Link>
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in">
+          <div className="bg-white rounded-[40px] p-8 w-full max-w-sm shadow-2xl border-4 border-red-100 text-center animate-in zoom-in-95">
+             <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 border-b-4 border-red-200 shadow-inner">
+                <Trash2 size={40} />
+             </div>
+             <h2 className="text-2xl font-black text-gray-800 mb-2">Na pewno? 😢</h2>
+             <p className="text-gray-500 font-bold mb-8">
+               To koniec naszej przygody. Twoje konto zostanie trwale usunięte.
+             </p>
+             <div className="flex flex-col gap-3">
+                 <div onClick={handleDeleteAccount}>
+                    <Button3D variant="danger" fullWidth>Tak, usuń wszystko</Button3D>
+                 </div>
+                 <div onClick={() => setIsDeleteModalOpen(false)}>
+                    <Button3D variant="neutral" fullWidth>Nie, zostaję!</Button3D>
+                 </div>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {isLogoutModalOpen && (
+          <div className="fixed inset-0 bg-black/60 z-[110] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200">
+              <div className="bg-white rounded-[40px] p-8 w-full max-w-sm shadow-[0_20px_50px_rgba(0,0,0,0.2)] border-4 border-gray-100 text-center animate-in zoom-in-95 duration-300">
+                  <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 border-b-4 border-red-200 shadow-inner">
+                      <LogOut size={40} strokeWidth={2.5} className="ml-1" />
+                  </div>
+                  <h2 className="text-3xl font-black text-gray-800 mb-2">Uciekasz?</h2>
+                  <p className="text-gray-500 font-bold mb-8 leading-tight">Na pewno chcesz się wylogować i opuścić grę?</p>
+                  <div className="flex flex-col gap-3">
+                      <div onClick={confirmLogout}><Button3D variant="danger" fullWidth>Tak, wyloguj</Button3D></div>
+                      <div onClick={() => setIsLogoutModalOpen(false)}><Button3D variant="neutral" fullWidth>Zostaję!</Button3D></div>
+                  </div>
+              </div>
+          </div>
+      )}
 
     </div>
   );

@@ -31,6 +31,7 @@ type GameContextType = {
   addXp: (amount: number) => Promise<void>;
   loseLife: () => Promise<void>;
   buyLives: (cost: number) => Promise<boolean>;
+  getFreeLife: () => Promise<boolean>;
   resetProgress: () => Promise<void>;
   updateProfile: (name: string, avatar: string, rank: string) => Promise<void>;
   finishGame: (isPerfect: boolean) => Promise<void>;
@@ -53,10 +54,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [perfectGames, setPerfectGames] = useState(0);
   const [selectedBadges, setSelectedBadges] = useState<number[]>([]);
-  const [hasClutchWin, setHasClutchWin] = useState(false); // NOWE
+  const [hasClutchWin, setHasClutchWin] = useState(false);
+  
+  const [lastRegenAt, setLastRegenAt] = useState<string | null>(null);
   
   const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge>(null);
-
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -112,6 +114,42 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return () => authListener.subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!user || lives >= 5 || !lastRegenAt) return;
+
+    const interval = setInterval(() => {
+        checkRegenLogic(lives, lastRegenAt, user.id);
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [user, lives, lastRegenAt]);
+
+  const checkRegenLogic = async (currentLives: number, lastRegenTimeStr: string, userId: string) => {
+      if (currentLives >= 5) return;
+
+      const lastRegen = new Date(lastRegenTimeStr);
+      const now = new Date();
+      const diffMs = now.getTime() - lastRegen.getTime();
+      const threeHoursMs = 3 * 60 * 60 * 1000;
+
+      if (diffMs >= threeHoursMs) {
+          const heartsToAdd = Math.floor(diffMs / threeHoursMs);
+          const newLives = Math.min(5, currentLives + heartsToAdd);
+
+          if (newLives > currentLives) {
+              const newTime = new Date().toISOString();
+              
+              await supabase.from('profiles').update({
+                  lives: newLives,
+                  last_regen_at: newTime
+              }).eq('id', userId);
+
+              setLives(newLives);
+              setLastRegenAt(newTime);
+          }
+      }
+  };
+
   const fetchProfile = async (uid: string) => {
     try {
       const { data } = await supabase.from('profiles').select('*').eq('id', uid).single();
@@ -120,7 +158,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setName(data.username); setAvatar(data.avatar); setRank(data.selected_rank || "Hello World");
         setGamesPlayed(data.games_played || 0); setPerfectGames(data.perfect_games || 0);
         setSelectedBadges(data.selected_badges || []);
-        setHasClutchWin(data.has_clutch_win || false); // NOWE
+        setHasClutchWin(data.has_clutch_win || false);
+        setLastRegenAt(data.last_regen_at || new Date().toISOString());
+
+        if (data.lives < 5 && data.last_regen_at) {
+            checkRegenLogic(data.lives, data.last_regen_at, uid);
+        }
       }
     } catch (error) { console.error(error); } finally { setIsLoading(false); }
   };
@@ -174,8 +217,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const loseLife = async () => {
     if (!user) return;
     const newLives = lives > 0 ? lives - 1 : 0;
+    
+    const updates: any = { lives: newLives };
+
+    if (lives === 5 && newLives < 5) {
+        const now = new Date().toISOString();
+        updates.last_regen_at = now;
+        setLastRegenAt(now);
+    }
+
     setLives(newLives);
-    await supabase.from('profiles').update({ lives: newLives }).eq('id', user.id);
+    await supabase.from('profiles').update(updates).eq('id', user.id);
   };
 
   const buyLives = async (cost: number) => {
@@ -185,6 +237,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setXp(newXp); setLives(5);
         await supabase.from('profiles').update({ xp: newXp, lives: 5 }).eq('id', user.id);
         return true;
+    }
+    return false;
+  };
+
+  const getFreeLife = async () => {
+    if (!user) return false;
+    if (lives === 0 && xp < 50) {
+      setLives(1);
+      await supabase.from('profiles').update({ lives: 1 }).eq('id', user.id);
+      return true;
     }
     return false;
   };
@@ -210,7 +272,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const registerWithEmail = async (email: string, pass: string, name: string) => {
     setIsLoading(true);
-    
     const { data, error } = await supabase.auth.signUp({ 
       email, 
       password: pass,
@@ -223,27 +284,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    if (error) { 
-      setIsLoading(false); 
-      return { error: error.message }; 
-    }
-
-    if (data.user) {
-      setUser(data.user); 
-      setName(name); 
-      setAvatar('🦊');
-      setXp(0); 
-      setLevel(1); 
-      setLives(5); 
-      setRank('Hello World'); 
-      setHasClutchWin(false);
-      
-      router.refresh(); 
-      router.push("/dashboard");
-    } else { 
-      setIsLoading(false); 
-    }
+    if (error) { setIsLoading(false); return { error: error.message }; }
     
+    if (data.user) {
+      setUser(data.user); setName(name); setXp(0); setLevel(1); setLives(5); setAvatar('🦊'); setRank('Hello World'); setHasClutchWin(false);
+      router.refresh(); router.push("/dashboard");
+    } else { setIsLoading(false); }
     return { error: null };
   };
 
@@ -257,7 +303,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         xp, level, lives, name, avatar, rank, gamesPlayed, perfectGames, selectedBadges, hasClutchWin,
         dailyChallenge,
         isLoading, user,
-        addXp, loseLife, buyLives, resetProgress, updateProfile, finishGame, updateSelectedBadges,
+        addXp, loseLife, buyLives, getFreeLife, resetProgress, updateProfile, finishGame, updateSelectedBadges,
         loginWithEmail, registerWithEmail, logout 
     }}>
       {children}

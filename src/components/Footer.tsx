@@ -67,7 +67,7 @@ export default function Footer() {
                 </a>
              </div>
              <p className="text-gray-400 text-xs font-bold">
-                Created by <span className="text-gray-600">Maciek Gilecki i Wioletta Grabias</span>
+                Created by <span className="text-gray-600">Maciek Gilecki, Wioletta Grabias</span>
              </p>
           </div>
 

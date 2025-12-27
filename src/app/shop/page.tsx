@@ -20,7 +20,7 @@ const SidebarItem = ({ icon: Icon, label, active = false, href, onClick }: any) 
 };
 
 export default function ShopPage() {
-  const { xp, lives, buyLives, getFreeLife, logout } = useGame();
+  const { xp, lives, buyLives, logout } = useGame();
   const [message, setMessage] = useState("");
   const [isBuying, setIsBuying] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -87,26 +87,6 @@ export default function ShopPage() {
             )}
 
             <div className="grid gap-4">
-              
-              {lives === 0 && xp < 50 && (
-                <div className="bg-red-50 p-6 rounded-2xl border-2 border-red-200 border-dashed flex items-center justify-between shadow-sm animate-pulse">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-red-100 text-red-500 rounded-xl">
-                            <Heart size={32} className="fill-current animate-beat" />
-                        </div>
-                        <div>
-                            <h3 className="font-black text-xl text-red-600">Ostatnia Szansa</h3>
-                            <p className="text-sm text-red-400 font-bold">Jesteś spłukany? Masz tu 1 życie!</p>
-                        </div>
-                    </div>
-                    <div onClick={async () => {
-                      await getFreeLife();
-                      setMessage("Uff! Wracaj do gry! ❤️");
-                    }}>
-                        <Button3D variant="danger">Odbierz</Button3D>
-                    </div>
-                </div>
-              )}
 
               <div className="bg-white p-6 rounded-2xl border-2 border-gray-200 flex items-center justify-between shadow-sm">
                   <div className="flex items-center gap-4">

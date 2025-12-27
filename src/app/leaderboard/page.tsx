@@ -2,7 +2,7 @@
 
 import { useGame } from "@/context/GameContext";
 import { 
-  Trophy, Home, Backpack, ShoppingBag, Settings, LogOut, Medal 
+  Trophy, Home, Backpack, ShoppingBag, Settings, LogOut 
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/utils/supabase";
@@ -40,7 +40,7 @@ export default function LeaderboardPage() {
   };
 
   const getRankMedal = (index: number) => {
-    if (index === 0) return <div className="text-4xl">🥇</div>;
+    if (index === 0) return <div className="text-4xl animate-bounce">🥇</div>;
     if (index === 1) return <div className="text-4xl">🥈</div>;
     if (index === 2) return <div className="text-4xl">🥉</div>;
     return <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 border border-gray-200">{index + 1}</div>;
@@ -73,24 +73,59 @@ export default function LeaderboardPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl border-2 border-gray-200 shadow-sm overflow-hidden">
-            {players.map((player, index) => (
-               <div key={player.id} className={`flex items-center gap-4 p-4 border-b border-dashed border-gray-100 last:border-0 hover:bg-gray-50 transition-colors ${player.id === user?.id ? "bg-purple-50 border-purple-100" : ""}`}>
-                  <div className="w-12 flex justify-center">{getRankMedal(index)}</div>
-                  <div className="w-12 h-12 bg-white rounded-full text-2xl flex items-center justify-center border-2 border-gray-100 shadow-sm">{player.avatar}</div>
-                  <div className="flex-1">
-                     <div className="font-black text-gray-800 text-lg leading-tight flex items-center gap-2">
-                        {player.username} 
-                        {player.id === user?.id && <span className="text-[10px] bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full uppercase tracking-wide">Ty</span>}
-                     </div>
-                     <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">{player.selected_rank || "Nowicjusz"}</div>
-                  </div>
-                  <div className="text-right">
-                     <div className="font-black text-gray-800 text-xl">{player.xp} XP</div>
-                     <div className="text-xs font-bold text-gray-400">Poziom {player.level}</div>
-                  </div>
-               </div>
-            ))}
+          <div className="bg-white rounded-3xl border-2 border-gray-200 shadow-sm p-2">
+            {players.map((player, index) => {
+               const isWinner = index === 0;
+               const isMe = player.id === user?.id;
+
+               return (
+                 <div 
+                   key={player.id} 
+                   className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-200
+                     ${isWinner 
+                        ? "bg-[#8b5cf6] text-white shadow-xl shadow-purple-200 mb-2 border-2 border-purple-500" 
+                        : (isMe 
+                            ? "bg-purple-50 border-2 border-purple-100 mb-1" 
+                            : "bg-white border-b border-dashed border-gray-100 last:border-0 hover:bg-gray-50"
+                          )
+                     }
+                   `}
+                 >
+                    <div className="w-12 flex justify-center drop-shadow-sm">{getRankMedal(index)}</div>
+                    
+                    <div className={`w-12 h-12 rounded-full text-2xl flex items-center justify-center border-2 shadow-sm
+                        ${isWinner ? "bg-white/20 border-white/30 backdrop-blur-sm" : "bg-white border-gray-100"}
+                    `}>
+                        {player.avatar}
+                    </div>
+
+                    <div className="flex-1">
+                       <div className={`font-black text-lg leading-tight flex items-center gap-2 ${isWinner ? "text-white" : "text-gray-800"}`}>
+                          {player.username} 
+                          {isMe && (
+                             <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide 
+                                ${isWinner ? "bg-white text-[#8b5cf6]" : "bg-purple-200 text-purple-700"}
+                             `}>
+                                Ty
+                             </span>
+                          )}
+                       </div>
+                       <div className={`text-xs font-bold uppercase tracking-wide ${isWinner ? "text-purple-200" : "text-gray-400"}`}>
+                          {player.selected_rank || "Nowicjusz"}
+                       </div>
+                    </div>
+
+                    <div className="text-right">
+                       <div className={`font-black text-xl ${isWinner ? "text-white" : "text-gray-800"}`}>
+                          {player.xp} XP
+                       </div>
+                       <div className={`text-xs font-bold ${isWinner ? "text-purple-200" : "text-gray-400"}`}>
+                          Poziom {player.level}
+                       </div>
+                    </div>
+                 </div>
+               );
+            })}
           </div>
 
         </div>

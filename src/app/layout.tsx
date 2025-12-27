@@ -4,6 +4,7 @@ import "./globals.css";
 import { GameProvider } from "@/context/GameContext";
 import Header from "@/components/Header";
 import MobileMenu from "@/components/MobileMenu";
+import Footer from "@/components/Footer";
 
 const nunito = Nunito({ subsets: ["latin"] });
 
@@ -22,10 +23,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl">
-      <body className={`${nunito.className} bg-[#fff7ed] min-h-screen pb-24 lg:pb-0`}>
+      <body className={`${nunito.className} bg-[#fff7ed] min-h-screen flex flex-col pb-24 lg:pb-0`}>
         <GameProvider>
           <Header />
-          {children}
+          <div className="flex-1 w-full">
+            {children}
+          </div>
+          <Footer />
           <MobileMenu />
         </GameProvider>
       </body>

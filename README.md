@@ -2,7 +2,7 @@
 
 ## 🎓 Projekt na zaliczenie przedmiotu **Aplikacje Internetowe**
 
-**Autor:** *Maciek Gilecki i Wioletta Grabias*
+**Autor:** *Maciek Gilecki i Wioletta Grabias*  
 **Kierunek:** Inżynieria i analiza danych  
 **Przedmiot:** Aplikacje internetowe  
 **Prowadzący:** *dr inż. Mirosław Mazurek*

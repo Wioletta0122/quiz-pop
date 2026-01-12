@@ -18,25 +18,22 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
 
-    // Sprawdzenie czy użytkownik rozwiązał CAPTCHA
     if (!captchaToken) {
         setError("Potwierdź, że nie jesteś robotem! 🤖");
         return;
     }
     
-    // Przekazujemy token do funkcji w Context
     const res = await loginWithEmail(email, password, captchaToken);
     
     if (res.error) {
         console.error("Błąd logowania:", res.error);
         setError(res.error);
-        // Opcjonalnie: resetujemy token po błędzie, aby wymusić ponowną weryfikację
         setCaptchaToken(null);
     }
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#fff7ed]">
+    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#fff7ed] bg-[radial-gradient(#fb923c_1px,transparent_1px)] [background-size:40px_40px]">
       
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
@@ -77,7 +74,6 @@ export default function LoginPage() {
                 />
             </div>
 
-            {/* Sekcja CAPTCHA */}
             <div className="flex justify-center py-2">
                 <HCaptcha 
                   sitekey="24487f82-9546-4770-872e-461cbc622d68" 

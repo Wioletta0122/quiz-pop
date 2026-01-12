@@ -50,7 +50,7 @@ export default function Footer() {
              
              <div className="flex gap-3">
                 <a 
-                  href="https://github.com/" 
+                  href="https://github.com/Wioletta0122/quiz-pop" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="bg-gray-100 p-3 rounded-xl text-gray-600 hover:bg-[#8b5cf6] hover:text-white transition-all hover:-translate-y-1"

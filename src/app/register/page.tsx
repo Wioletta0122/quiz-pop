@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const { registerWithEmail, isLoading } = useGame();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +22,11 @@ export default function RegisterPage() {
 
     if (username.length < 3) {
         setError("Ksywka musi mieć min. 3 znaki!");
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        setError("Hasła muszą być identyczne!");
         return;
     }
 
@@ -39,7 +45,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#fff7ed] bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]">
+    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#fff7ed] bg-[radial-gradient(#fb923c_1px,transparent_1px)] [background-size:40px_40px]">
       
       <div className="w-full max-w-md space-y-8">
         
@@ -91,6 +97,19 @@ export default function RegisterPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl p-3 font-bold focus:outline-none focus:border-primary transition-colors"
                     placeholder="Minimum 6 znaków"
+                    minLength={6}
+                />
+            </div>
+
+            <div className="space-y-2">
+                <label className="font-black text-gray-700 ml-1">Potwierdź Hasło</label>
+                <input 
+                    type="password" 
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl p-3 font-bold focus:outline-none focus:border-primary transition-colors"
+                    placeholder="Powtórz hasło"
                     minLength={6}
                 />
             </div>

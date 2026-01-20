@@ -5,7 +5,7 @@ import { useGame } from "@/context/GameContext";
 import Button3D from "@/components/Button3D";
 import Link from "next/link";
 import { 
-  Save, Lock, Trash2, User, RefreshCw, AlertTriangle,
+  Save, Lock, Trash2, User, RefreshCw, AlertTriangle, Eye,
   Home, Trophy, Backpack, ShoppingBag, Settings, LogOut 
 } from "lucide-react";
 import { supabase } from "@/utils/supabase";
@@ -22,7 +22,7 @@ const SidebarItem = ({ icon: Icon, label, active = false, href, onClick }: any) 
 };
 
 export default function SettingsPage() {
-  const { user, name, avatar, rank, updateProfile, logout } = useGame();
+  const { user, name, avatar, rank, updateProfile, logout, isHighContrast, toggleHighContrast } = useGame();
   
   const [newName, setNewName] = useState(name);
   const [newAvatar, setNewAvatar] = useState(avatar);
@@ -169,6 +169,23 @@ export default function SettingsPage() {
                   <Button3D variant="primary" fullWidth>
                       {isLoadingProfile ? <RefreshCw className="animate-spin" /> : <div className="flex items-center gap-2 justify-center"><Save size={18} /> Zapisz Zmiany</div>}
                   </Button3D>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-sm">
+              <h2 className="text-xl font-black text-gray-800 mb-6 flex items-center gap-2">
+                <Eye className="text-amber-500" /> Dostępność
+              </h2>
+              <div className="flex items-center justify-between">
+                <div>
+                    <h3 className="font-bold text-gray-800">Wysoki Kontrast</h3>
+                    <p className="text-xs text-gray-400 font-bold">Lepsza widoczność, ciemne tło.</p>
+                </div>
+                <div onClick={toggleHighContrast}>
+                    <Button3D variant={isHighContrast ? "success" : "neutral"}>
+                        {isHighContrast ? "WŁĄCZONY" : "WYŁĄCZONY"}
+                    </Button3D>
                 </div>
               </div>
             </div>

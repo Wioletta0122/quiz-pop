@@ -28,6 +28,9 @@ type GameContextType = {
   isLoading: boolean;
   user: any;
   
+  isHighContrast: boolean;
+  toggleHighContrast: () => void;
+  
   addXp: (amount: number) => Promise<void>;
   loseLife: () => Promise<void>;
   buyLives: (cost: number) => Promise<boolean>;
@@ -62,9 +65,30 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge>(null);
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [isHighContrast, setIsHighContrast] = useState(false);
   
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    const savedContrast = localStorage.getItem("highContrast") === "true";
+    setIsHighContrast(savedContrast);
+  }, []);
+
+  useEffect(() => {
+    if (isHighContrast) {
+        document.body.classList.add("high-contrast");
+        localStorage.setItem("highContrast", "true");
+    } else {
+        document.body.classList.remove("high-contrast");
+        localStorage.setItem("highContrast", "false");
+    }
+  }, [isHighContrast]);
+
+  const toggleHighContrast = () => {
+    setIsHighContrast(prev => !prev);
+  };
 
   useEffect(() => {
     const fetchChallenge = async () => {
@@ -326,6 +350,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         xp, level, lives, name, avatar, rank, gamesPlayed, perfectGames, selectedBadges, hasClutchWin,
         dailyChallenge,
         isLoading, user,
+        isHighContrast, toggleHighContrast,
         addXp, loseLife, buyLives, getFreeLife, resetProgress, updateProfile, finishGame, updateSelectedBadges,
         isBadgeUnlocked,
         loginWithEmail, registerWithEmail, logout 

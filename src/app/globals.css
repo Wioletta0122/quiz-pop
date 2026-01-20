@@ -6,3 +6,64 @@ body {
   background-image: radial-gradient(#fb923c 1px, transparent 1px);
   background-size: 40px 40px;
 }
+
+body.high-contrast {
+  background-image: none !important;
+  background-color: #000000 !important;
+  color: #fbbf24 !important;
+}
+
+body.high-contrast * {
+  border-color: #ffffff !important;
+}
+
+body.high-contrast .bg-white,
+body.high-contrast .bg-gray-50,
+body.high-contrast .bg-purple-50,
+body.high-contrast .bg-red-50,
+body.high-contrast .bg-amber-100,
+body.high-contrast nav,
+body.high-contrast aside,
+body.high-contrast header,
+body.high-contrast footer,
+body.high-contrast main {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast h1,
+body.high-contrast h2,
+body.high-contrast h3,
+body.high-contrast h4,
+body.high-contrast span,
+body.high-contrast p,
+body.high-contrast label,
+body.high-contrast input {
+  color: #ffffff !important;
+}
+
+body.high-contrast input {
+  background-color: #1a1a1a !important;
+  border: 2px solid #ffffff !important;
+}
+
+body.high-contrast button {
+  box-shadow: none !important;
+  border: 2px solid #ffffff !important;
+}
+
+
+body.high-contrast .text-primary,
+body.high-contrast .text-purple-600 {
+  color: #fbbf24 !important;
+}
+
+body.high-contrast .bg-primary,
+body.high-contrast .bg-purple-600,
+body.high-contrast [class*="bg-[#8b5cf6]"] { 
+
+  background-color: #1a1a1a !important;
+  border-color: #ffffff !important;
+  color: #fbbf24 !important;
+}

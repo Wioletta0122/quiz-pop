@@ -25,6 +25,12 @@ export default function RegisterPage() {
         return;
     }
 
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+    if (!passwordRegex.test(password)) {
+        setError("Hasło musi mieć min. 6 znaków, dużą literę i cyfrę!");
+        return;
+    }
+
     if (password !== confirmPassword) {
         setError("Hasła muszą być identyczne!");
         return;
@@ -96,7 +102,7 @@ export default function RegisterPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl p-3 font-bold focus:outline-none focus:border-primary transition-colors"
-                    placeholder="Minimum 6 znaków"
+                    placeholder="Min. 6 znaków, duża litera, cyfra"
                     minLength={6}
                 />
             </div>

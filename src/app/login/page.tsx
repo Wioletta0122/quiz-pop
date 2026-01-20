@@ -18,6 +18,11 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
 
+    if (password.length < 6) {
+        setError("Hasło jest za krótkie (min. 6 znaków)!");
+        return;
+    }
+
     if (!captchaToken) {
         setError("Potwierdź, że nie jesteś robotem! 🤖");
         return;
@@ -27,7 +32,13 @@ export default function LoginPage() {
     
     if (res.error) {
         console.error("Błąd logowania:", res.error);
-        setError(res.error);
+        
+        if (res.error.includes("Invalid login credentials")) {
+            setError("Nieprawidłowy email lub hasło!");
+        } else {
+            setError(res.error);
+        }
+        
         setCaptchaToken(null);
     }
   };
